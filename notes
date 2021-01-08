@@ -1,0 +1,58 @@
+Python 汉字转拼音的库--- PyPinyin
+Python 中提供了汉字转拼音的库，名字叫做 PyPinyin，可以用于汉字注音、排序、检索等等场合，是基于 hotto/pinyin 这个库开发
+pip3 install pypinyin
+
+import pypinyin
+from pypinyin import pinyin
+print(pinyin('中心'))
+运行结果：
+
+[['zhōng'], ['xīn']]
+
+那么如果这个词是多音字咋办呢？只需添加 heteronym 参数并设置为 True 就好了:
+from pypinyin import pinyin
+print(pinyin('朝阳', heteronym=True))
+
+风格转换
+from pypinyin import lazy_pinyin, Style
+style = Style.TONE3
+print(lazy_pinyin('聪明的小兔子', style=style))
+
+
+输入：pip install baidu-aip，如下安装百度AI的模块。
+利用系统内置语音引擎实现发音
+Pyttsx是一个跨平台将文字转成语音的第三方库，它对操作系统内置的语音引擎实现了包装。
+pyttsx默认使用的是读取英文引擎，如果需要读取中文时需要修改语言设置
+gTTS可以将文字转成语音进行保存为MP3格式，然后再读取语音实现发音，它是通过调用Google提供的TTS服务来实现将文字转语音的，因为需要调用Google的服务，所以需要翻墙
+
+pip install pyttsx
+pip install pyttsx3
+import pyttsx3
+engine = pyttsx3.init()
+engine.say('How are you today?')
+
+engine.setProperty("voice","HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Sp
+				eech\Voices\Tokens\TTS_MS_ZH-CN_HUIHUI_11.0")
+engine.say("你好吗？")
+engine.runAndWait()
+
+
+方法一：ABC输入法先按住键盘上的"V"键，同时按下数字键"8"就会弹出所有拼音声调
+方法一：中文输入法工具栏上的软键盘，选“拼音”从打开的软键盘中打字。
+
+word2vec的文件是需要分词的，分词可以采用jieba分词实现，安装jieba 分词 
+NLP（自然语言）领域现在可谓是群雄纷争，各种开源组件层出不穷，其中一支不可忽视的力量便是jieba分词，号称要做最好的 Python 中文分词组件。
+pip install jieba
+
+
+汉字转出拼音字母，
+听写汉字
+卡片式自动播放读音，点击个读音
+
+
+1.通过给字组词来补充词组。
+2.通过分词工具来检验词组。
+
+https://www.pwxcoo.com/dictionary?type=idiom&abbreviation=xgcl
+
+

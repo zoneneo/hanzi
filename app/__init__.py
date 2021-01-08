@@ -13,9 +13,9 @@ from flask import render_template
 app = Flask(__name__)
 app.config.from_object(config)
 DATABASE = "models"
-app_name='haizi'
+app_name='hanzi'
 dbconf={
-    'name':'haizi',
+    'name':'hanzi',
     'user':'root',
     'pass':'maintainer',
     'host':'localhost',

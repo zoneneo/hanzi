@@ -12,6 +12,9 @@ import sqlalchemy.types as types
 from sqlalchemy.ext.mutable import Mutable,MutableDict,MutableList
 import json
 
+lett=db.Enum()
+a=ord('a')
+lett.enums=[chr(i) for i in range(a,a+26)]
 
 
 class JSONEncodedDict(TypeDecorator):
@@ -135,25 +138,26 @@ class Students(Base):
 class Words(Base):
     id = db.Column(db.Integer, primary_key=True)
     spell = db.Column(db.String(16), comment='拼音')
+    letter = db.Column(lett, comment='首字母')
     word = db.Column(db.String(8), comment='汉字')
     freq = db.Column(db.Integer, comment='频率')
     grade = db.Column(db.Integer, comment='年级')
     section = db.Column(db.String(64), comment='章节')
     know = db.Column(db.Integer, comment='牚握')
-    left = db.Column(db.String(512), comment='左组词')
-    right = db.Column(db.String(512), comment='右组词')
+    phrase = db.Column(db.String(512), comment='词组')
 
 
 #四字成语
 class Idiom(Base):
     id = db.Column(db.Integer, primary_key=True)
 
-#歇后语
+
+#词组短语
 class Phrase(Base):
     id = db.Column(db.Integer, primary_key=True)
-
-
-
-
+    audit = db.Column(db.Boolean(0), comment='是否正确')
+    kind = db.Column(db.Enum('a','i','p','w'), comment='分类idiom,proverb,word')
+    spell = db.Column(db.String(128), comment='拼音')
+    words = db.Column(db.String(32), comment='词组')
 
 

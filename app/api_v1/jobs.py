@@ -13,7 +13,9 @@ from app.utils import lect_request,atoi,str_to_list,object_dict
 from app import models
 
 from pypinyin import pinyin
+import jieba
 
+from io import BytesIO
 
 @api.route("/words", methods=['POST'])
 def add_words():
@@ -98,26 +100,54 @@ def get_customers():
 
 
 
+def to_add_word(word):
+    try:
+        g=word.encode('gbk')
+        i=int(g.hex(), 16)
+        spell = pinyin(word)[0][0]
+        words = models.Words(id=i,word=word, spell=spell, phrase='', know='0', section='', grade='0', freq='0')
+        current_app.session.add(words)
+        current_app.session.flush()
+        current_app.session.commit()
+    except Exception as ee:
+        current_app.session.rollback()
+        print(str(ee))
+
+
 
 @api.route("/phrase", methods=['POST'])
 def add_phrase():
     try:
-        word=request.data.decode('utf-8')
+        raws=request.data
         pattern = re.compile(r'[^\u4e00-\u9fa5]')
-        result = re.sub(pattern,'', word)
-        # print(result)
-        # if len(wds)>1:
-        #     for w in wds:
-        #         row['word']=w
-        #         row['spell']=pinyin(w)[0][0]
-        #         customer = models.Words(**row)
-        #         current_app.session.add(customer)
-        # else:
-        #     row['spell'] = pinyin(row['word'])[0][0]
-        #     customer = models.Words(**row)
-        #     current_app.session.add(customer)
-        # current_app.session.commit()
+        text=raws.decode()
+        data = re.sub(pattern,'', text)
+        result = jieba.cut(data)
 
-        return jsonify(status=200, data=result)
+        arr=[]
+        for word in result:
+            word=word.strip()
+            arr.append(word)
+            l=len(word)
+            if l>1:
+                p=[w[0] for w in pinyin(word)]
+                s = ' '.join(p)
+                try:
+                    gbk = word.encode('gbk')
+                    h = gbk.hex()
+                    phrase = models.Phrase(gbk=h,score=0,length=l,spell=s,words=word)
+                    current_app.session.add(phrase)
+                    current_app.session.flush()
+                    current_app.session.commit()
+                except Exception as ex:
+                    current_app.session.rollback()
+                    print(str(ex))
+
+
+        for wds in arr:
+            for w in wds:
+                to_add_word(w)
+
+        return jsonify(status=200, message='成功添加词组数%d'%len(arr))
     except Exception as e:
         return jsonify(status=500, message='处理错误',error=str(e))

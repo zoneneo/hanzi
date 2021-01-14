@@ -151,3 +151,9 @@ def add_phrase():
         return jsonify(status=200, message='成功添加词组数%d'%len(arr))
     except Exception as e:
         return jsonify(status=500, message='处理错误',error=str(e))
+
+
+@api.route("/grab", methods=['get'])
+def run_grab():
+    from app import grab
+    lks=grab.deal_grab()

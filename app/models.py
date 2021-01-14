@@ -146,6 +146,8 @@ class Words(Base):
     phrase = db.Column(db.String(512), comment='词组')
 
 
+
+
 #四字成语
 class Idiom(Base):
     id = db.Column(db.Integer, primary_key=True)
@@ -164,3 +166,20 @@ class Phrase(Base):
     words = db.Column(db.String(32), comment='词组')
 
 
+class Chapter(Base):
+    id = db.Column(db.Integer, primary_key=True)
+    grade = db.Column(db.Integer, comment='年级')
+    chapter = db.Column(db.Integer, comment='年级')
+    subject = db.Column(db.String(64), comment='题目')
+    content = db.Column(db.Text, comment='课文')
+
+
+
+class Links(Base):
+    id = db.Column(db.Integer, primary_key=True)
+    used = db.Column(db.Boolean(0), comment='己使用')
+    grade = db.Column(db.Integer, comment='年级')
+    chapter = db.Column(db.Integer, comment='年级')
+    subject = db.Column(db.String(64), comment='课文题目')
+    link = db.Column(db.String(512), comment='链接')
+    tag = db.Column(db.String(16), comment='标签')

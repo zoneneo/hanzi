@@ -28,13 +28,11 @@ def add_words():
                 row['word']=w
                 row['spell']=pinyin(w)[0][0]
                 customer = models.Words(**row)
-                current_app.session.add(customer)
+                customer.save()
         else:
             row['spell'] = pinyin(row['word'])[0][0]
             customer = models.Words(**row)
-            current_app.session.add(customer)
-        current_app.session.commit()
-
+            customer.save()
         return jsonify(status=200, data=row)
     except Exception as e:
         return jsonify(status=500, message='处理错误',error=str(e))
@@ -46,8 +44,9 @@ def update_customer(key):
         lect = lect_request(request, 'word,freq,grade,section,know,phrase',None)
         row={k:lect[k] for k in lect if lect[k] is not None}
         if row:
-            ret = models.Words.query.filter(models.Words.id == key).update(row)
-            current_app.session.commit()
+            #ret = models.Words.query.filter(models.Words.id == key).update(row)
+            #current_app.session.commit()
+            ret = models.Words.update(key,**row)
             if ret:
                 row['id']=key
                 return jsonify(status=200, data=row)
@@ -62,10 +61,7 @@ def update_customer(key):
 @api.route("/words/<key>", methods=['DELETE'])
 def delete_customer(key):
     try:
-        one = models.Words.query.get(key)
-        if one:
-            current_app.session.delete(one)
-            current_app.session.commit()
+        if models.Words.remove(key)：
             return jsonify(status=200, message='删除成功')
         else:
             return jsonify(status=404, message='不存在')

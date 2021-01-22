@@ -35,14 +35,20 @@ class JSONEncodedDict(TypeDecorator):
 
 #MutableDict.associate_with(JSONEncodedDict)
 
+def tab_name(val,pre='c'):
+    seq=pre+val
+    return ''.join([c.isupper() and '_'+c or c for c in seq]).lower()
+
+
 
 class Base(db.Model):
     __abstract__ = True
     __table_args__ = {'mysql_engine': 'InnoDB'}
     # create_time = db.Column(db.TIMESTAMP(True),server_default=text('CURRENT_TIMESTAMP'))
+
     @declared_attr
     def __tablename__(cls):
-        return 'c'+''.join([c.isupper() and '_'+c or c for c in cls.__name__]).lower()
+        return tab_name(cls.__name__)
 
     def save(self, flush = True):
         result = db.session.add(self)
@@ -98,6 +104,28 @@ class Base(db.Model):
     @classmethod
     def commit(cls):
         db.session.commit()
+
+    @classmethod
+    def get_page(cls, page, size, search = None):
+        query = cls.query
+        if search:
+            query = cls._filter_search(query, search)
+
+        if 'order_num' in cls.__table__.columns:
+            query = query.order_by(cls.order_num)
+        else:
+            query = query.order_by(desc(cls.id))
+
+        return (query.paginate(page, per_page = size, error_out = False))
+
+    @classmethod
+    def _filter_search(cls, query, search):
+        # do nothing filter
+        return query
+
+    @classmethod
+    def get_all(cls):
+        return cls.query.all()
 
 
 class Common(Base):

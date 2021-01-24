@@ -9,43 +9,31 @@ import json
 
 import importlib
 
-from app.utils import lect_request,atoi,str_to_list,object_dict
+from app.utils import lect_request,atoi
 from app import models
 
 from pypinyin import pinyin
 import jieba
 
-from io import BytesIO
+from app.phrase import deal_acsii,split_article,word2pinyin,add_word
 
 @api.route("/words", methods=['POST'])
 def add_words():
-    try:
-        #row = lect_request(request,' id spell word freq grade section know phrase')
         row = lect_request(request, 'word freq grade section know')
-        wds=row.get('word','').split()
-        if len(wds)>1:
-            for w in wds:
-                row['word']=w
-                row['spell']=pinyin(w)[0][0]
-                customer = models.Words(**row)
-                customer.save()
-        else:
-            row['spell'] = pinyin(row['word'])[0][0]
-            customer = models.Words(**row)
-            customer.save()
-        return jsonify(status=200, data=row)
-    except Exception as e:
-        return jsonify(status=500, message='处理错误',error=str(e))
+        try:
+            val=row.pop('word','')
+            add_word(val.strip(),row)
+            return jsonify(status=200, seqs=val, data=row)
+        except Exception as e:
+            return jsonify(status=500, message='处理错误',error=str(e))
 
 
 @api.route("/words/<key>", methods=['PUT'])
-def update_customer(key):
+def update_words(key):
     try:
         lect = lect_request(request, 'word,freq,grade,section,know,phrase',None)
         row={k:lect[k] for k in lect if lect[k] is not None}
         if row:
-            #ret = models.Words.query.filter(models.Words.id == key).update(row)
-            #current_app.session.commit()
             ret = models.Words.update(key,**row)
             if ret:
                 row['id']=key
@@ -59,9 +47,9 @@ def update_customer(key):
 
 
 @api.route("/words/<key>", methods=['DELETE'])
-def delete_customer(key):
+def delete_words(key):
     try:
-        if models.Words.remove(key)：
+        if models.Words.remove(key):
             return jsonify(status=200, message='删除成功')
         else:
             return jsonify(status=404, message='不存在')
@@ -69,87 +57,60 @@ def delete_customer(key):
         return jsonify(status=500, message='处理错误',error=str(e))
 
 
-@api.route("/words/<uid>", methods=['GET'])
-def get_customer(uid):
+@api.route("/words/<gbk>", methods=['GET'])
+def get_words(gbk):
     try:
-        customer = models.Words.query.get(uid)
-        if customer:
-            row = object_dict(customer)
+        words = models.Words.query.get(gbk)
+        if words:
+            row = words.to_dict()
             return jsonify(status=200, data=row)
         else:
-            return jsonify(status=404, message='客户不存在')
+            return jsonify(status=404, message='不存在')
     except Exception as e:
         return jsonify(status=500, message='处理错误',error=str(e))
 
 
 @api.route("/words", methods=['GET'])
-def get_customers():
+def list_words():
     try:
         result=[]
         all = models.Words.query.all()
         for one in all:
-            row=object_dict(one)
-            result.append(row)
+            result.append(row.to_dict())
         return jsonify(status=200, data=result)
     except Exception as e:
         return jsonify(status=500, message='处理错误',error=str(e))
 
 
-
-def to_add_word(word):
+@api.route("/section", methods=['POST'])
+def add_section():
     try:
-        g=word.encode('gbk')
-        i=int(g.hex(), 16)
-        spell = pinyin(word)[0][0]
-        words = models.Words(id=i,word=word, spell=spell, phrase='', know='0', section='', grade='0', freq='0')
-        current_app.session.add(words)
-        current_app.session.flush()
-        current_app.session.commit()
-    except Exception as ee:
-        current_app.session.rollback()
-        print(str(ee))
+        row = lect_request(request, 'grade chapter know word phrase')
+        # for k in row:
+        #     row[k]=row[k].decode()
 
+        section=models.Section(**row)
+        section.save()
+        return jsonify(status=200, data=row)
+    except Exception as e:
+        return jsonify(status=500, message='处理错误',error=str(e))
 
 
 @api.route("/phrase", methods=['POST'])
 def add_phrase():
     try:
-        raws=request.data
-        pattern = re.compile(r'[^\u4e00-\u9fa5]')
-        text=raws.decode()
-        data = re.sub(pattern,'', text)
-        result = jieba.cut(data)
-
-        arr=[]
-        for word in result:
-            word=word.strip()
-            arr.append(word)
-            l=len(word)
-            if l>1:
-                p=[w[0] for w in pinyin(word)]
-                s = ' '.join(p)
-                try:
-                    gbk = word.encode('gbk')
-                    h = gbk.hex()
-                    phrase = models.Phrase(gbk=h,score=0,length=l,spell=s,words=word)
-                    current_app.session.add(phrase)
-                    current_app.session.flush()
-                    current_app.session.commit()
-                except Exception as ex:
-                    current_app.session.rollback()
-                    print(str(ex))
-
-
+        param=dict(freq=1,grade=0,section=0,know=0)
+        raws=deal_acsii(request.data)
+        arr=split_article(raws)
         for wds in arr:
-            for w in wds:
-                to_add_word(w)
-
+            try:
+                phrase = models.Phrase(**wds)
+                phrase.save()
+            except Exception as e:
+                phrase.rollback()
+            else:
+                word=wds.get('words')
+                add_word(word,param)
         return jsonify(status=200, message='成功添加词组数%d'%len(arr))
     except Exception as e:
         return jsonify(status=500, message='处理错误',error=str(e))
-
-
-@api.route("/grab", methods=['get'])
-def run_grab():
-    from app import grab
-    lks=grab.deal_grab()

@@ -71,6 +71,10 @@ class Base(db.Model):
 
 
     @classmethod
+    def rollback(cls):
+        return db.session.rollback()
+
+    @classmethod
     def update(cls,sid,**row):
         cls.query.filter_by(id=sid).update(row)
         return db.session.commit()
@@ -197,10 +201,18 @@ class Phrase(Base):
 class Chapter(Base):
     id = db.Column(db.Integer, primary_key=True)
     grade = db.Column(db.Integer, comment='年级')
-    chapter = db.Column(db.Integer, comment='年级')
+    chapter = db.Column(db.Integer, comment='章节')
     subject = db.Column(db.String(64), comment='题目')
     content = db.Column(db.Text, comment='课文')
 
+
+class Section(Base):
+    id = db.Column(db.Integer, primary_key=True)
+    grade = db.Column(db.Integer, comment='年级')
+    chapter = db.Column(db.Integer, comment='章节')
+    know = db.Column(db.String(512), comment='识字表')
+    word = db.Column(db.String(512), comment='写字表')
+    phrase = db.Column(db.Text, comment='词语表')
 
 
 class Links(Base):

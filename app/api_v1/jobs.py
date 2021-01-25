@@ -31,15 +31,15 @@ def add_words():
 @api.route("/words/<key>", methods=['PUT'])
 def update_words(key):
     try:
-        lect = lect_request(request, 'word,freq,grade,section,know,phrase',None)
+        lect = lect_request(request, 'word freq grade section know phrase',None)
         row={k:lect[k] for k in lect if lect[k] is not None}
+        w=row.pop('word')
         if row:
-            ret = models.Words.update(key,**row)
-            if ret:
-                row['id']=key
-                return jsonify(status=200, data=row)
-            else:
-                return jsonify(status=404, message='项目不存在')
+            pin=word2pinyin(w)
+            row.update(pin)
+            word = models.Words(**row)
+            word.upsert()
+            return jsonify(status=200, data=row)
         else:
             return jsonify(status=400, message='没有修改内容')
     except Exception as e:
@@ -73,10 +73,17 @@ def get_words(gbk):
 @api.route("/words", methods=['GET'])
 def list_words():
     try:
+        z,n,f,v=lect_request(request, 'size','page','field','value')
+        pgz,pgn=atoi(z,2),atoi(n,1)
+        if f and v:
+            parms={f:v}
+        else:
+            parms={}
         result=[]
-        all = models.Words.query.all()
-        for one in all:
-            result.append(row.to_dict())
+        query = models.Words._page(pgn,pgz,**parms)
+
+        for one in query.items:
+            result.append(one.to_dict())
         return jsonify(status=200, data=result)
     except Exception as e:
         return jsonify(status=500, message='处理错误',error=str(e))
@@ -112,5 +119,25 @@ def add_phrase():
                 word=wds.get('words')
                 add_word(word,param)
         return jsonify(status=200, message='成功添加词组数%d'%len(arr))
+    except Exception as e:
+        return jsonify(status=500, message='处理错误',error=str(e))
+
+
+
+@api.route("/phrase", methods=['GET'])
+def list_phrase():
+    try:
+        z,n,f,v=lect_request(request, 'size','page','field','value')
+        pgz,pgn=atoi(z,2),atoi(n,1)
+        if f and v:
+            parms={f:v}
+        else:
+            parms={}
+        result=[]
+        query = models.Phrase._page(pgn,pgz,**parms)
+
+        for one in query.items:
+            result.append(one.to_dict())
+        return jsonify(status=200, data=result)
     except Exception as e:
         return jsonify(status=500, message='处理错误',error=str(e))

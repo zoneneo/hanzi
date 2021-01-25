@@ -57,6 +57,10 @@ class Base(db.Model):
             db.session.commit()
         return result
 
+    def upsert(self):
+        db.session.merge(self)
+        return db.session.commit()
+
     def destroy(self):
         result = db.session.delete(self)
         return result
@@ -74,6 +78,7 @@ class Base(db.Model):
     def rollback(cls):
         return db.session.rollback()
 
+
     @classmethod
     def update(cls,sid,**row):
         cls.query.filter_by(id=sid).update(row)
@@ -81,8 +86,8 @@ class Base(db.Model):
 
 
     @classmethod
-    def by_id(cls, id):
-        return cls.query.get(id)
+    def _get(cls, key):
+        return cls.query.get(key)
 
 
     @classmethod
@@ -101,7 +106,7 @@ class Base(db.Model):
 
 
     @classmethod
-    def get_count(cls, search = None):
+    def _count(cls, search = None):
         result = db.session.query(func.count(cls.id))
         return result.scalar()
 
@@ -110,25 +115,28 @@ class Base(db.Model):
         db.session.commit()
 
     @classmethod
-    def get_page(cls, page, size, search = None):
-        query = cls.query
+    def _page(cls, page, size, **search):
+
+        is_desc = search.pop('is_desc',False)
         if search:
-            query = cls._filter_search(query, search)
-
-        if 'order_num' in cls.__table__.columns:
-            query = query.order_by(cls.order_num)
+            key, val = search.popitem()
+            if key in cls.__table__.columns:
+                field = getattr(cls, key)
+                query = cls.query.filter(field.like("%" + val + "%"))
+            else:
+                query = cls.query
         else:
+            query = cls.query
+
+        if is_desc:
             query = query.order_by(desc(cls.id))
+        else:
+            query = query.order_by(cls.id)
 
-        return (query.paginate(page, per_page = size, error_out = False))
-
-    @classmethod
-    def _filter_search(cls, query, search):
-        # do nothing filter
-        return query
+        return query.paginate(page, per_page=size, error_out=False)
 
     @classmethod
-    def get_all(cls):
+    def _all(cls):
         return cls.query.all()
 
 

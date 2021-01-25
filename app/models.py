@@ -223,6 +223,17 @@ class Section(Base):
     phrase = db.Column(db.Text, comment='词语表')
 
 
+class Dictation(Base):
+    id = db.Column(db.Integer, primary_key=True)
+    book_id = db.Column(db.Integer, comment='课本id')
+    level = db.Column(db.Integer, comment='级别')
+    grade = db.Column(db.Integer, comment='年级')
+    chapter = db.Column(db.String(64), comment='章节')
+    words = db.Column(db.String(64), comment='写字表')
+    know = db.Column(db.String(64), comment='识字表')
+    phrase = db.Column(db.String(512), comment='词组')
+
+
 class Links(Base):
     id = db.Column(db.Integer, primary_key=True)
     used = db.Column(db.Boolean(0), comment='己使用')
@@ -231,3 +242,19 @@ class Links(Base):
     subject = db.Column(db.String(64), comment='课文题目')
     link = db.Column(db.String(512), comment='链接')
     tag = db.Column(db.String(16), comment='标签')
+
+
+class TextBook(Base):
+    id = db.Column(db.Integer, primary_key=True)
+    title =db.Column(db.String(64), comment='书本')
+    grade = db.Column(db.Integer, comment='年级')#小初中高级
+    volume = db.Column(db.String(64), comment='上中下册')
+    edition=db.Column(db.String(64), comment='版本')
+    introduction=db.Column(db.Text, comment='介绍')    
+
+
+class Publisher(Base):
+    id = db.Column(db.Integer, primary_key=True)
+    publisher = db.Column(db.String(64), comment='出版商')    
+    province = db.Column(db.Integer, comment='省份')
+

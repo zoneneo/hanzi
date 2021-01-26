@@ -5,4 +5,5 @@ CORS(api)
 
 from . import sole
 from . import jobs
+from . import assist
 from . import admin

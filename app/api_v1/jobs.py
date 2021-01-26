@@ -89,19 +89,6 @@ def list_words():
         return jsonify(status=500, message='处理错误',error=str(e))
 
 
-@api.route("/section", methods=['POST'])
-def add_section():
-    try:
-        row = lect_request(request, 'grade chapter know word phrase')
-        # for k in row:
-        #     row[k]=row[k].decode()
-
-        section=models.Section(**row)
-        section.save()
-        return jsonify(status=200, data=row)
-    except Exception as e:
-        return jsonify(status=500, message='处理错误',error=str(e))
-
 
 @api.route("/phrase", methods=['POST'])
 def add_phrase():
@@ -134,7 +121,26 @@ def list_phrase():
         else:
             parms={}
         result=[]
-        query = models.Phrase._page(pgn,pgz,**parms)
+        query = models.Phrase._search(pgn,pgz,**parms)
+
+        for one in query.items:
+            result.append(one.to_dict())
+        return jsonify(status=200, data=result)
+    except Exception as e:
+        return jsonify(status=500, message='处理错误',error=str(e))
+
+
+@api.route("/words/search", methods=['GET'])
+def search_words():
+    try:
+        z,n,f,v=lect_request(request, 'size','page','field','value')
+        pgz,pgn=atoi(z,2),atoi(n,1)
+        if f and v:
+            parms={f:v}
+        else:
+            parms={}
+        result=[]
+        query = models.Words._page(pgn,pgz,**parms)
 
         for one in query.items:
             result.append(one.to_dict())

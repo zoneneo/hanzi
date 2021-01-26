@@ -12,9 +12,9 @@ import sqlalchemy.types as types
 from sqlalchemy.ext.mutable import Mutable,MutableDict,MutableList
 import json
 
-lett=db.Enum()
-a=ord('a')
-lett.enums=[chr(i) for i in range(a,a+26)]
+# lett=db.Enum()
+# a=ord('a')
+# lett.enums=[chr(i) for i in range(a,a+26)]
 
 
 class JSONEncodedDict(TypeDecorator):
@@ -115,7 +115,7 @@ class Base(db.Model):
         db.session.commit()
 
     @classmethod
-    def _page(cls, page, size, **search):
+    def _search(cls, page, size, **search):
 
         is_desc = search.pop('is_desc',False)
         if search:
@@ -125,6 +125,25 @@ class Base(db.Model):
                 query = cls.query.filter(field.like("%" + val + "%"))
             else:
                 query = cls.query
+        else:
+            query = cls.query
+
+        if is_desc:
+            query = query.order_by(desc(cls.id))
+        else:
+            query = query.order_by(cls.id)
+
+        return query.paginate(page, per_page=size, error_out=False)
+
+    @classmethod
+    def _page(cls, page, size, **kwargs):
+        is_desc = kwargs.pop('is_desc',False)
+        if kwargs:
+            conditions={}
+            for key in kwargs:
+                if key in cls.__table__.columns:
+                    conditions[key]=kwargs[key]
+            query = cls.query.filter_by(**conditions)
         else:
             query = cls.query
 
@@ -177,16 +196,11 @@ class Students(Base):
 #汉语字词
 class Words(Base):
     id = db.Column(db.Integer, primary_key=True)
-    spell = db.Column(db.String(16), comment='拼音')
-    word = db.Column(db.String(8), comment='汉字')
+    gbk = db.Column(db.String(8), comment='编码')
+    spell = db.Column(db.String(50), comment='拼写')
+    word = db.Column(db.String(4), comment='汉字')
+    tone = db.Column(db.String(50), comment='拼音')
     freq = db.Column(db.Integer, comment='频率')
-    grade = db.Column(db.Integer, comment='年级')
-    section = db.Column(db.String(64), comment='章节')
-    know = db.Column(db.Integer, comment='牚握')
-    phrase = db.Column(db.String(512), comment='词组')
-
-
-
 
 #四字成语
 class Idiom(Base):
@@ -226,7 +240,6 @@ class Section(Base):
 class Dictation(Base):
     id = db.Column(db.Integer, primary_key=True)
     book_id = db.Column(db.Integer, comment='课本id')
-    level = db.Column(db.Integer, comment='级别')
     grade = db.Column(db.Integer, comment='年级')
     chapter = db.Column(db.String(64), comment='章节')
     words = db.Column(db.String(64), comment='写字表')
@@ -234,27 +247,55 @@ class Dictation(Base):
     phrase = db.Column(db.String(512), comment='词组')
 
 
-class Links(Base):
+class Courses(Base):
     id = db.Column(db.Integer, primary_key=True)
-    used = db.Column(db.Boolean(0), comment='己使用')
+    book_id = db.Column(db.Integer, comment='课本id')
     grade = db.Column(db.Integer, comment='年级')
-    chapter = db.Column(db.Integer, comment='年级')
-    subject = db.Column(db.String(64), comment='课文题目')
-    link = db.Column(db.String(512), comment='链接')
-    tag = db.Column(db.String(16), comment='标签')
+    chapter = db.Column(db.String(64), comment='章节')
+    words = db.Column(db.String(64), comment='写字表')
+    know = db.Column(db.String(64), comment='识字表')
+    phrase = db.Column(db.String(512), comment='词组')
+
+
+class Article(Base):
+    id = db.Column(db.Integer, primary_key=True)
+    tag = db.Column(db.String(64), comment='标签')
+    book_id = db.Column(db.Integer, comment='书本id')
+    category = db.Column(db.String(64), comment='分类')
+    author = db.Column(db.String(32), comment='作者')
+    subject = db.Column(db.String(64), comment='主题')
+    content = db.Column(db.Text, comment='内容')
 
 
 class TextBook(Base):
     id = db.Column(db.Integer, primary_key=True)
-    title =db.Column(db.String(64), comment='书本')
-    grade = db.Column(db.Integer, comment='年级')#小初中高级
-    volume = db.Column(db.String(64), comment='上中下册')
+    #publication_date = db.Column(db.TIMESTAMP(True), server_default=text('CURRENT_TIMESTAMP'))
+    title =db.Column(db.String(64), comment='书本名称')
+    course = db.Column(db.String(32), comment='科目')#语文
+    level = db.Column(db.String(64), comment='级别')#小初中高级
+    grade = db.Column(db.Integer, comment='年级')
+    volume = db.Column(db.Integer, comment='上中下册')
     edition=db.Column(db.String(64), comment='版本')
-    introduction=db.Column(db.Text, comment='介绍')    
+    editor=db.Column(db.String(128), comment='主编')
+    abstract=db.Column(db.Text, comment='摘要')
+    isbn = db.Column(db.String(32), comment='版本')
+    press=db.Column(db.Integer, comment='出版商id')
+    province = db.Column(db.Integer, comment='省份')
 
 
 class Publisher(Base):
     id = db.Column(db.Integer, primary_key=True)
-    publisher = db.Column(db.String(64), comment='出版商')    
+    publishing_house = db.Column(db.String(128), comment='出版商')
+    serial_number = db.Column(db.String(8), comment='编号')
     province = db.Column(db.Integer, comment='省份')
 
+
+
+class Links(Base):
+    id = db.Column(db.Integer, primary_key=True)
+    used = db.Column(db.Boolean(0), comment='己使用')
+    grade = db.Column(db.Integer, comment='年级')
+    chapter = db.Column(db.Integer, comment='课文')
+    subject = db.Column(db.String(64), comment='课文题目')
+    link = db.Column(db.String(512), comment='链接')
+    tag = db.Column(db.String(16), comment='标签')

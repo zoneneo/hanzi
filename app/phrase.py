@@ -12,9 +12,11 @@ def deal_acsii(raws):
 def word2pinyin(word):
     try:
         g=word.encode('gbk')
-        i=int(g.hex(), 16)
-        spell = pinyin(word)[0][0]
-        return dict(id=i,word=word, spell=spell)
+        h=g.hex()
+        i=int(h, 16)
+        tone = '  '.join(pinyin(word,heteronym = True)[0])
+        spell = pinyin(word, style =0)[0][0]
+        return dict(id=i,gbk=h, word=word, tone=tone, spell=spell)
     except Exception as ee:
         print(str(ee))
 
